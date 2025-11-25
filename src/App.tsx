@@ -1,23 +1,57 @@
 
+
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
 */
 
 import React, { useState, useEffect } from 'react';
-import { TrafficHeroScene, SimulationScene } from './components/QuantumScene';
-import { FrameworkDiagram, BenchmarkResultsDiagram } from './components/Diagrams';
+import { TrafficHeroScene, SimulationScene } from '../components/QuantumScene';
+import { FrameworkDiagram, BenchmarkResultsDiagram, NetworkCarousel } from './components/Diagrams';
 import { ArrowDown, Menu, X, Github, ExternalLink, Map, Activity, BarChart3, Database, Cpu, GitFork, Users, Code, Trophy } from 'lucide-react';
 
-const AuthorCard = ({ name, affiliation, delay }: { name: string, affiliation: string, delay: string }) => {
+interface Author {
+    name: string;
+    affiliation: string;
+    github?: string;
+    delay: string;
+}
+
+const authors: Author[] = [
+    { name: "Ahmet Onur Akman", affiliation: "Jagiellonian University", github: "aonurakman", delay: "0s" },
+    { name: "Anastasia Psarou", affiliation: "Jagiellonian University", github: "AnastasiaPsarou", delay: "0.1s" },
+    { name: "Michał Hoffmann", affiliation: "Jagiellonian University", github: "Crackhoff", delay: "0.2s" },
+    { name: "Łukasz Gorczyca", affiliation: "Jagiellonian University", github: "Limexcyan", delay: "0.3s" },
+    { name: "Łukasz Kowalski", affiliation: "Urban Policy Observatory", github: "LukaszKowalski2013", delay: "0.4s" },
+    { name: "Paweł Gora", affiliation: "Jagiellonian University", github: "pgora", delay: "0.5s" },
+    { name: "Grzegorz Jamróz", affiliation: "Jagiellonian University", github: "GrzegorzJamroz", delay: "0.6s" },
+    { name: "Rafał Kucharski", affiliation: "Jagiellonian University", github: "RafalKucharskiPK", delay: "0.7s" },
+];
+
+const AuthorCard = ({ author }: { author: Author }) => {
   return (
-    <div className="flex flex-col group items-center p-6 bg-white rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300 w-full hover:border-urb-blue/50" style={{ animationDelay: delay }}>
-      <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center mb-4 text-slate-400 font-bold group-hover:bg-urb-blue group-hover:text-white transition-colors">
-        {name.charAt(0)}
+    <a 
+      href={author.github ? `https://github.com/${author.github}` : '#'} 
+      target="_blank" 
+      rel="noopener noreferrer"
+      className="flex flex-col group items-center p-6 bg-white rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300 w-full hover:border-urb-blue/50" 
+      style={{ animationDelay: author.delay }}
+    >
+      <div className="w-16 h-16 rounded-full overflow-hidden mb-4 border-2 border-slate-100 group-hover:border-urb-blue transition-colors relative bg-slate-100 flex items-center justify-center">
+        {author.github ? (
+             <img 
+               src={`https://github.com/${author.github}.png`} 
+               alt={author.name} 
+               className="w-full h-full object-cover"
+             />
+        ) : (
+             <span className="text-slate-400 font-bold text-xl">{author.name.charAt(0)}</span>
+        )}
       </div>
-      <h3 className="font-sans font-bold text-sm text-slate-900 text-center mb-1">{name}</h3>
-      <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider text-center leading-relaxed">{affiliation}</p>
-    </div>
+      <h3 className="font-sans font-bold text-sm text-slate-900 text-center mb-1 group-hover:text-urb-blue transition-colors">{author.name}</h3>
+      <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider text-center leading-relaxed">{author.affiliation}</p>
+    </a>
   );
 };
 
@@ -65,16 +99,30 @@ const App: React.FC = () => {
     <div className="min-h-screen bg-slate-50 text-slate-900 selection:bg-urb-blue selection:text-white font-sans">
       
       {/* Navigation */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-white/90 backdrop-blur-md shadow-sm py-3' : 'bg-transparent py-6'}`}>
-        <div className="container mx-auto px-6 flex justify-between items-center">
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-            <img 
-              src="https://raw.githubusercontent.com/COeXISTENCE-PROJECT/URB/refs/heads/main/docs/urb.png" 
-              alt="URB Logo" 
-              className="w-16 h-16 object-contain"
-            />
-            <span className={`font-bold text-lg tracking-tight ${scrolled ? 'text-slate-900' : 'text-slate-900'}`}>
-              URB <span className="font-normal text-slate-500 text-sm">Urban Routing Benchmark</span>
+      <nav 
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+            scrolled ? 'py-4 px-4' : 'py-6 px-0'
+        }`}
+      >
+        <div className={`
+            container mx-auto px-6 flex justify-between items-center transition-all duration-300
+            ${scrolled ? 'bg-white/95 backdrop-blur-md shadow-lg rounded-2xl py-3 border border-slate-100' : 'bg-transparent'}
+        `}>
+          <div className="flex items-center gap-4 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+            {/* Enlarged 1.5x (w-16 -> w-24) */}
+            <div className={`transition-all duration-300 w-24 h-24`}>
+                 <img 
+                  src="https://raw.githubusercontent.com/COeXISTENCE-PROJECT/URB/refs/heads/main/docs/urb.png" 
+                  alt="URB Logo" 
+                  className="w-full h-full object-contain"
+                />
+            </div>
+            {/* Single line text, adjusted font */}
+            <span className={`font-bold text-xl md:text-2xl tracking-tighter leading-none ${scrolled ? 'text-slate-900' : 'text-slate-900'} hidden md:block whitespace-nowrap`}>
+              Urban Routing Benchmark
+            </span>
+             <span className={`font-bold text-xl tracking-tight ${scrolled ? 'text-slate-900' : 'text-slate-900'} md:hidden`}>
+              URB
             </span>
           </div>
           
@@ -87,22 +135,32 @@ const App: React.FC = () => {
             
             <div className="flex items-center gap-3 ml-2">
               <a 
-                href="https://arxiv.org/abs/2505.17734" 
+                href="https://www.rafalkucharskilab.pl/COeXISTENCE/" 
                 target="_blank" 
-                rel="noopener noreferrer" 
-                className="flex items-center gap-2 px-3 py-2 bg-red-50 text-red-700 border border-red-200 rounded-lg hover:bg-red-100 transition-colors"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors text-xs font-bold tracking-wider"
               >
-                <img src="https://images.seeklogo.com/logo-png/46/2/arxiv-logo-png_seeklogo-467499.png" alt="ArXiv" className="w-8 h-8 object-contain" />
-                <span>Paper</span>
+                COeXISTENCE
               </a>
               <a 
                 href="https://github.com/COeXISTENCE-PROJECT/URB" 
                 target="_blank" 
                 rel="noopener noreferrer" 
-                className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors shadow-sm"
+                className="flex items-center gap-2 px-5 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors h-12 box-border"
+                title="View Code on GitHub"
               >
-                <Github size={16} />
-                <span>Code</span>
+                <Github size={20} />
+                <span className="font-semibold">Code</span>
+              </a>
+              <a 
+                href="https://arxiv.org/abs/2505.17734" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="flex items-center gap-2 px-5 bg-red-50 text-red-700 border border-red-200 rounded-lg hover:bg-red-100 transition-colors h-12 box-border"
+                title="View Paper on ArXiv"
+              >
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/ArXiv_logo_2022.svg/1024px-ArXiv_logo_2022.svg.png" alt="ArXiv" className="h-6 w-auto object-contain" />
+                <span className="font-semibold">Paper</span>
               </a>
             </div>
           </div>
@@ -122,47 +180,67 @@ const App: React.FC = () => {
             <a href="#results" onClick={scrollToSection('results')}>Results</a>
             <a href="#contributing" onClick={scrollToSection('contributing')}>Contribute</a>
             <div className="flex flex-col gap-4 mt-4 w-64">
+              <a href="https://www.rafalkucharskilab.pl/COeXISTENCE/" className="flex items-center justify-center gap-2 px-6 py-3 bg-slate-700 text-white rounded-lg">
+                <span className="font-semibold">COeXISTENCE</span>
+              </a>
               <a href="https://arxiv.org/abs/2505.17734" className="flex items-center justify-center gap-2 px-6 py-3 bg-red-50 text-red-700 border border-red-200 rounded-lg">
-                <img src="https://images.seeklogo.com/logo-png/46/2/arxiv-logo-png_seeklogo-467499.png" alt="ArXiv" className="w-5 h-5 object-contain" /> Paper
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/ArXiv_logo_2022.svg/1024px-ArXiv_logo_2022.svg.png" alt="ArXiv" className="h-6 w-auto object-contain" />
+                <span className="font-semibold ml-2">Paper</span>
               </a>
               <a href="https://github.com/COeXISTENCE-PROJECT/URB" className="flex items-center justify-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-lg">
-                <Github size={20} /> Code
+                <Github size={20} /> <span className="font-semibold">Code</span>
               </a>
             </div>
         </div>
       )}
 
       {/* Hero Section */}
-      <header className="relative h-screen flex items-center justify-center overflow-hidden bg-slate-50">
+      <header className="relative h-screen flex items-center justify-center overflow-hidden bg-slate-50 pt-32 md:pt-20">
         <TrafficHeroScene />
         
         {/* Gradient Overlay */}
         <div className="absolute inset-0 z-0 pointer-events-none bg-[radial-gradient(circle_at_center,rgba(248,250,252,0.8)_0%,rgba(248,250,252,0.4)_60%,rgba(248,250,252,0)_100%)]" />
 
-        <div className="relative z-10 container mx-auto px-6 text-center max-w-4xl pt-12">
+        <div className="relative z-10 container mx-auto px-6 text-center max-w-4xl pt-12 md:pt-0">
           <UrbLogo />
           
-          <div className="inline-flex items-center gap-2 mb-6 px-3 py-1 bg-white border border-slate-200 rounded-full shadow-sm">
+          {/* Reduced Badge size as requested */}
+          <a 
+            href="https://neurips.cc/virtual/2025/loc/san-diego/poster/121647"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 mb-8 px-4 py-2 bg-white border border-slate-200 rounded-full shadow-sm hover:border-urb-blue transition-colors group transform hover:scale-105 duration-200"
+          >
             <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-            <span className="text-xs font-bold tracking-widest text-slate-500 uppercase">NeurIPS 2025</span>
-          </div>
+            <span className="text-sm font-bold tracking-widest text-slate-500 uppercase group-hover:text-urb-blue transition-colors">NeurIPS 2025</span>
+          </a>
           
-          <h1 className="font-bold text-5xl md:text-7xl mb-6 text-slate-900 tracking-tight leading-tight">
-            URB <span className="text-slate-500">Urban Routing Benchmark</span>
-            <span className="block text-2xl md:text-3xl font-normal text-slate-500 mt-4 font-mono">for RL-equipped Connected Autonomous Vehicles</span>
+          {/* Larger Title (1.5x larger) */}
+          <h1 className="font-bold text-6xl md:text-8xl mb-6 text-slate-900 tracking-tight leading-tight">
+            Urban Routing Benchmark
+            <span className="block text-xl md:text-2xl font-normal text-slate-500 mt-4 font-mono">for RL-equipped Connected Autonomous Vehicles</span>
           </h1>
           
-          <p className="max-w-2xl mx-auto text-lg text-slate-600 leading-relaxed mb-10">
-            A comprehensive environment unifying evaluation across 29 real-world traffic networks to test Multi-Agent Reinforcement Learning strategies in mixed autonomy traffic.
+          <p className="max-w-3xl mx-auto text-lg text-slate-600 leading-relaxed mb-10">
+            A comprehensive benchmarking environment unifying evaluation across <strong>29 real-world traffic networks</strong> to test multi-agent reinforcement learning-based routing strategies in mixed autonomy traffic.
           </p>
           
           <div className="flex flex-col md:flex-row justify-center gap-4">
              <a href="#overview" onClick={scrollToSection('overview')} className="px-8 py-3 bg-urb-blue text-white font-medium rounded-lg hover:bg-blue-600 transition-colors shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2">
                 Explore The Benchmark
              </a>
+             <a 
+                href="https://github.com/COeXISTENCE-PROJECT/URB" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="px-8 py-3 bg-slate-900 text-white font-medium rounded-lg hover:bg-slate-800 transition-colors shadow-lg shadow-slate-900/20 flex items-center justify-center gap-2"
+             >
+                <Github size={20} />
+                <span>Code</span>
+             </a>
              <a href="https://doi.org/10.34740/kaggle/ds/7406751" target="_blank" rel="noopener noreferrer" className="px-8 py-3 bg-white text-slate-700 font-medium rounded-lg border border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition-colors flex items-center justify-center gap-2">
-                <Database size={18} />
-                Get Data
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f4/Kaggle_Logo.svg/2560px-Kaggle_Logo.svg.png" className="h-4 w-auto object-contain" alt="Kaggle" />
+                <span>Get Data</span>
              </a>
           </div>
         </div>
@@ -182,14 +260,9 @@ const App: React.FC = () => {
                 </div>
                 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <AuthorCard name="Ahmet Onur Akman" affiliation="Jagiellonian University" delay="0s" />
-                    <AuthorCard name="Anastasia Psarou" affiliation="Jagiellonian University" delay="0.1s" />
-                    <AuthorCard name="Michał Hoffmann" affiliation="Jagiellonian University" delay="0.2s" />
-                    <AuthorCard name="Łukasz Gorczyca" affiliation="Jagiellonian University" delay="0.3s" />
-                    <AuthorCard name="Łukasz Kowalski" affiliation="Urban Policy Observatory" delay="0.4s" />
-                    <AuthorCard name="Paweł Gora" affiliation="Jagiellonian University" delay="0.5s" />
-                    <AuthorCard name="Grzegorz Jamróz" affiliation="Jagiellonian University" delay="0.6s" />
-                    <AuthorCard name="Rafał Kucharski" affiliation="Jagiellonian University" delay="0.7s" />
+                    {authors.map((author, index) => (
+                        <AuthorCard key={index} author={author} />
+                    ))}
                 </div>
            </div>
         </section>
@@ -199,7 +272,7 @@ const App: React.FC = () => {
           <div className="container mx-auto px-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
                 <div>
-                   <h2 className="text-3xl md:text-4xl font-bold mb-6 text-slate-900">The Challenge of Urban Routing</h2>
+                   <h2 className="text-3xl md:text-4xl font-bold mb-6 text-slate-900">The future of urban routing</h2>
                    <div className="w-20 h-1.5 bg-urb-blue mb-8 rounded-full"></div>
                    <p className="text-lg text-slate-600 mb-6 leading-relaxed">
                      Connected Autonomous Vehicles (CAVs) promise to reduce congestion by optimizing routing decisions collectively. However, standard benchmarks for this complex, multi-agent problem have been missing.
@@ -210,13 +283,13 @@ const App: React.FC = () => {
                    <div className="flex flex-wrap gap-4 mt-8">
                       <div className="px-4 py-2 bg-slate-50 border border-slate-100 rounded-md text-sm font-semibold text-slate-600">29 Networks</div>
                       <div className="px-4 py-2 bg-slate-50 border border-slate-100 rounded-md text-sm font-semibold text-slate-600">SUMO Integration</div>
-                      <div className="px-4 py-2 bg-slate-50 border border-slate-100 rounded-md text-sm font-semibold text-slate-600">MARL Baselines</div>
+                      <div className="px-4 py-2 bg-slate-50 border border-slate-100 rounded-md text-sm font-semibold text-slate-600">Baselines</div>
                    </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                     <FeatureCard icon={Map} title="Real Topology" desc="Networks from Île-de-France and Ingolstadt varying in size and complexity." />
                     <FeatureCard icon={Activity} title="Realistic Demand" desc="Calibrated trip patterns based on census and empirical traffic data." />
-                    <FeatureCard icon={BarChart3} title="Standard Metrics" desc="Evaluate travel time, emissions, and network-level efficiency." />
+                    <FeatureCard icon={BarChart3} title="Standard Metrics" desc="Evaluate travel time, congestion, and network-level efficiency." />
                     <FeatureCard icon={Database} title="Open Data" desc="Fully reproducible datasets and configuration schemes." />
                 </div>
             </div>
@@ -289,6 +362,10 @@ const App: React.FC = () => {
                             </div>
                          </div>
                     </div>
+                    
+                    <div className="mt-8 pt-8 border-t border-slate-100">
+                        <NetworkCarousel />
+                    </div>
                 </div>
             </div>
         </section>
@@ -307,7 +384,7 @@ const App: React.FC = () => {
                     <div className="p-6 bg-white/5 rounded-xl border border-white/10 backdrop-blur-sm">
                         <Cpu className="w-8 h-8 text-urb-accent mx-auto mb-3" />
                         <div className="text-xl font-bold text-white mb-1">Dynamics</div>
-                        <div className="text-xs text-slate-400">Krauss car-following model & gap acceptance</div>
+                        <div className="text-xs text-slate-400">Car-following Physics & gap acceptance</div>
                     </div>
                     <div className="p-6 bg-white/5 rounded-xl border border-white/10 backdrop-blur-sm">
                         <GitFork className="w-8 h-8 text-urb-accent mx-auto mb-3" />
@@ -316,8 +393,8 @@ const App: React.FC = () => {
                     </div>
                     <div className="p-6 bg-white/5 rounded-xl border border-white/10 backdrop-blur-sm">
                         <Users className="w-8 h-8 text-urb-accent mx-auto mb-3" />
-                        <div className="text-xl font-bold text-white mb-1">Heterogeneity</div>
-                        <div className="text-xs text-slate-400">Mixed autonomy with diverse driver profiles</div>
+                        <div className="text-xl font-bold text-white mb-1">Mixed Traffic</div>
+                        <div className="text-xs text-slate-400">Interaction between human drivers and algorithmic CAV agents</div>
                     </div>
                  </div>
             </div>
@@ -344,7 +421,7 @@ const App: React.FC = () => {
                     </div>
                     <div className="bg-yellow-50 p-6 rounded-lg border border-yellow-100">
                         <h4 className="font-bold text-yellow-800 mb-2">Cost of Training</h4>
-                        <p className="text-sm text-yellow-700">Training requires millions of interactions. Despite lengthy training, many agents fail to learn cooperative strategies.</p>
+                        <p className="text-sm text-yellow-700">Training involves exploring suboptimal routes, causing regret and delays for all commuters during the learning phase.</p>
                     </div>
                     <div className="bg-blue-50 p-6 rounded-lg border border-blue-100">
                         <h4 className="font-bold text-blue-800 mb-2">Future Work</h4>

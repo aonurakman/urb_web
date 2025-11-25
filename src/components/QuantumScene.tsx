@@ -1,274 +1,461 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
 */
 
-import React, { useRef, useMemo } from 'react';
+import React, { useRef, useMemo, useEffect, Suspense } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Float, Box, Line, Plane, Sphere, Environment } from '@react-three/drei';
+import { Environment, PerspectiveCamera, OrbitControls, Instance, Instances, Text3D, Center } from '@react-three/drei';
 import * as THREE from 'three';
 
-// Add type augmentation for R3F intrinsic elements if they are missing
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      group: any;
-      mesh: any;
-      meshStandardMaterial: any;
-      meshBasicMaterial: any;
-      planeGeometry: any;
-      circleGeometry: any;
-      boxGeometry: any;
-      ambientLight: any;
-      pointLight: any;
+// --- UTILS ---
+const randomRange = (min: number, max: number) => Math.random() * (max - min) + min;
+
+// --- CITY DATA GENERATION ---
+const useCityData = (count = 60, range = 25) => {
+  return useMemo(() => {
+    const nodes: THREE.Vector3[] = [];
+    const connections: THREE.Vector3[] = []; // Pairs of start/end points
+    const adjacency: number[][] = Array(count).fill(0).map(() => []);
+
+    // 1. Generate Nodes on a Grid-like structure with noise (XZ plane)
+    for (let i = 0; i < count; i++) {
+        let x = randomRange(-range, range);
+        let z = randomRange(-range, range);
+        
+        // Snap to grid vaguely
+        const gridSize = 6;
+        x = Math.round(x / gridSize) * gridSize + randomRange(-0.5, 0.5);
+        z = Math.round(z / gridSize) * gridSize + randomRange(-0.5, 0.5);
+        
+        // Avoid duplicates or too close
+        const tooClose = nodes.some(n => n.distanceTo(new THREE.Vector3(x, 0, z)) < 4);
+        if (!tooClose) {
+            nodes.push(new THREE.Vector3(x, 0, z));
+        }
     }
-  }
-}
-
-declare module 'react' {
-  namespace JSX {
-    interface IntrinsicElements {
-      group: any;
-      mesh: any;
-      meshStandardMaterial: any;
-      meshBasicMaterial: any;
-      planeGeometry: any;
-      circleGeometry: any;
-      boxGeometry: any;
-      ambientLight: any;
-      pointLight: any;
-    }
-  }
-}
-
-// --- Components ---
-
-interface RoutingVehicleProps {
-  type: 'human' | 'cav';
-  delay: number;
-  pathChoice: 'left' | 'right';
-}
-
-const RoutingVehicle: React.FC<RoutingVehicleProps> = ({ type, delay, pathChoice }) => {
-  const ref = useRef<THREE.Group>(null);
-  const color = type === 'human' ? '#ef4444' : '#3B82F6';
-  
-  // Create path points
-  const path = useMemo(() => {
-    // Start point
-    const start = new THREE.Vector3(0, 0, 10);
-    // Decision point
-    const junction = new THREE.Vector3(0, 0, 2);
     
-    // End points depending on choice
-    const end = pathChoice === 'left' 
-      ? new THREE.Vector3(-4, 0, -10) // Left path (congested usually)
-      : new THREE.Vector3(4, 0, -10); // Right path (optimized)
+    // 2. Connect Nodes (Roads)
+    nodes.forEach((node, i) => {
+      // Find k nearest neighbors
+      const neighbors = nodes
+        .map((n, idx) => ({ idx, dist: node.distanceTo(n) }))
+        .filter(n => n.idx !== i)
+        .sort((a, b) => a.dist - b.dist)
+        .slice(0, 3); // Max 3 roads per intersection
 
-    // Control points for bezier-like curve
-    const control = pathChoice === 'left'
-      ? new THREE.Vector3(-3, 0, -2)
-      : new THREE.Vector3(3, 0, -2);
+      neighbors.forEach(n => {
+        // Connect if close enough
+        if (n.dist < 14) { 
+             const neighborIdx = n.idx;
+             // Check if connection already exists to avoid double drawing
+             const alreadyConnected = adjacency[i].includes(neighborIdx);
+             
+             if (!alreadyConnected) {
+                 connections.push(node);
+                 connections.push(nodes[neighborIdx]);
+                 
+                 adjacency[i].push(neighborIdx);
+                 adjacency[neighborIdx].push(i);
+             }
+        }
+      });
+    });
 
-    const curve = new THREE.CatmullRomCurve3([
-        start,
-        new THREE.Vector3(0, 0, 6),
-        junction,
-        control,
-        end
-    ]);
-    return curve;
-  }, [pathChoice]);
+    return { nodes, connections, adjacency };
+  }, [count, range]);
+};
 
-  useFrame((state) => {
-    if (ref.current) {
-      // Loop time
-      const totalTime = 8;
-      let t = (state.clock.getElapsedTime() + delay) % totalTime;
-      const progress = t / totalTime;
+// --- COMPONENTS ---
 
-      // Ensure valid range [0, 1]
-      if (progress >= 0 && progress <= 1) {
-          const point = path.getPointAt(progress);
-          const tangent = path.getTangentAt(progress);
-          
-          ref.current.position.copy(point);
-          ref.current.lookAt(point.clone().add(tangent));
-          
-          // Add some bobbing
-          ref.current.position.y = -0.4;
-      }
+const Buildings = ({ nodes }: { nodes: THREE.Vector3[] }) => {
+    return (
+        <Instances range={nodes.length}>
+            <boxGeometry args={[1.8, 1, 1.8]} />
+            <meshStandardMaterial color="#94a3b8" />
+            {nodes.map((node, i) => (
+                <Instance
+                    key={i}
+                    position={[node.x, 0.5 + Math.random() * 2, node.z]}
+                    scale={[1, 1 + Math.random() * 3, 1]}
+                />
+            ))}
+        </Instances>
+    )
+}
+
+const RoadNetwork = ({ connections }: { connections: THREE.Vector3[] }) => {
+    const roads = useMemo(() => {
+        const segments = [];
+        for(let i=0; i<connections.length; i+=2) {
+            const start = connections[i];
+            const end = connections[i+1];
+            
+            const length = start.distanceTo(end);
+            const mid = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
+            
+            // Calculate rotation to align with the connection
+            const direction = new THREE.Vector3().subVectors(end, start).normalize();
+            
+            // Box default is along Z axis for length if we use args [w, h, 1]
+            // We need to rotate (0,0,1) to `direction`
+            const quaternion = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), direction);
+            
+            segments.push({ position: mid, quaternion, length });
+        }
+        return segments;
+    }, [connections]);
+
+    return (
+        <Instances range={roads.length}>
+            {/* Flat road: Width 0.6, Height 0.05, Length 1 (scaled) */}
+            <boxGeometry args={[0.6, 0.05, 1]} />
+            <meshStandardMaterial color="#475569" roughness={0.8} />
+            {roads.map((road, i) => (
+                <Instance
+                    key={i}
+                    position={road.position}
+                    quaternion={road.quaternion}
+                    scale={[1, 1, road.length]} 
+                />
+            ))}
+        </Instances>
+    );
+};
+
+const Traffic = ({ nodes, adjacency, brainRef }: { nodes: THREE.Vector3[], adjacency: number[][], brainRef: React.RefObject<THREE.Group | null> }) => {
+  const particleCount = 150;
+  const meshRef = useRef<THREE.InstancedMesh>(null);
+  const dummy = useMemo(() => new THREE.Object3D(), []);
+  
+  // Initialize particles
+  const particles = useMemo(() => {
+    if (nodes.length === 0) return [];
+    return new Array(particleCount).fill(0).map(() => {
+      const startIdx = Math.floor(Math.random() * nodes.length);
+      const neighbors = adjacency[startIdx];
+      let endIdx = neighbors.length > 0 ? neighbors[Math.floor(Math.random() * neighbors.length)] : startIdx;
+      
+      return {
+        current: startIdx,
+        next: endIdx,
+        progress: Math.random(),
+        speed: randomRange(0.015, 0.04), // Slower cruising speed
+        isCAV: Math.random() > 0.4, // 60% CAVs
+        offset: randomRange(-0.15, 0.15)
+      };
+    });
+  }, [nodes, adjacency]);
+
+  // Buffer Geometry for Beams
+  const beamGeoRef = useRef<THREE.BufferGeometry>(null);
+  const maxBeams = 20;
+
+  useEffect(() => {
+    if (beamGeoRef.current) {
+        beamGeoRef.current.setDrawRange(0, 0);
+    }
+  }, []);
+  
+  useFrame((state, delta) => {
+    if (!meshRef.current || particles.length === 0) return;
+    
+    const time = state.clock.elapsedTime;
+    
+    // Update Cars
+    particles.forEach((p, i) => {
+        if (p.current === p.next) return; 
+
+        p.progress += p.speed * delta * 10;
+
+        if (p.progress >= 1) {
+            p.progress = 0;
+            p.current = p.next;
+            const neighbors = adjacency[p.current];
+            if (neighbors.length > 0) {
+                p.next = neighbors[Math.floor(Math.random() * neighbors.length)];
+            } else {
+                p.next = p.current; 
+            }
+        }
+
+        const startPos = nodes[p.current];
+        const endPos = nodes[p.next];
+
+        // Linear interpolation
+        dummy.position.lerpVectors(startPos, endPos, p.progress);
+        
+        // Add lane offset
+        const dir = new THREE.Vector3().subVectors(endPos, startPos).normalize();
+        const up = new THREE.Vector3(0,1,0);
+        const side = new THREE.Vector3().crossVectors(dir, up).normalize();
+        
+        dummy.position.addScaledVector(side, p.offset);
+        dummy.position.y = 0.15; // Slightly above road
+
+        // Orient car: Look at target
+        // Since geometry is scaled Z-long, looking at target aligns Z with direction
+        // We look at a point slightly ahead in the direction of movement to ensure stability
+        const targetX = dummy.position.x + dir.x;
+        const targetZ = dummy.position.z + dir.z;
+        dummy.lookAt(targetX, 0.15, targetZ);
+        
+        // Scale: width, height, length (Z is length)
+        dummy.scale.set(0.25, 0.2, 0.5); 
+        dummy.updateMatrix();
+
+        meshRef.current!.setMatrixAt(i, dummy.matrix);
+
+        // Color
+        const color = p.isCAV ? new THREE.Color("#3b82f6") : new THREE.Color("#f97316");
+        meshRef.current!.setColorAt(i, color);
+    });
+    meshRef.current.instanceMatrix.needsUpdate = true;
+    if (meshRef.current.instanceColor) meshRef.current.instanceColor.needsUpdate = true;
+
+    // Update Control Beams (Brain -> CAVs)
+    if (beamGeoRef.current && brainRef.current) {
+        const brainPos = brainRef.current.position;
+        const positions = new Float32Array(maxBeams * 2 * 3);
+        let lineIndex = 0;
+        
+        // Just random firing
+        const shouldFire = Math.sin(time * 5) > 0;
+        
+        // Iterate through particles to find connection targets
+        if (shouldFire) {
+             for(let k=0; k < particles.length && lineIndex < maxBeams; k+=9) {
+                 if (particles[k].isCAV) {
+                     const mat = new THREE.Matrix4();
+                     meshRef.current.getMatrixAt(k, mat);
+                     const carPos = new THREE.Vector3().setFromMatrixPosition(mat);
+                     
+                     // Start Point (Brain)
+                     positions[lineIndex * 6 + 0] = brainPos.x;
+                     positions[lineIndex * 6 + 1] = brainPos.y;
+                     positions[lineIndex * 6 + 2] = brainPos.z;
+                     // End Point (Car)
+                     positions[lineIndex * 6 + 3] = carPos.x;
+                     positions[lineIndex * 6 + 4] = carPos.y;
+                     positions[lineIndex * 6 + 5] = carPos.z;
+                     
+                     lineIndex++;
+                 }
+             }
+        }
+        
+        beamGeoRef.current.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        beamGeoRef.current.setDrawRange(0, lineIndex * 2);
+        beamGeoRef.current.attributes.position.needsUpdate = true;
     }
   });
 
   return (
-    <group ref={ref}>
-        {/* Car Body - Swapped Width (X) and Depth (Z) so car faces forward along Z axis */}
-        {/* Narrower width (0.14) relative to length (0.4) to look like a car, not sideways box */}
-        <Box args={[0.14, 0.12, 0.4]} position={[0, 0.1, 0]}>
-            <meshStandardMaterial color={color} metalness={0.5} roughness={0.2} />
-        </Box>
+    <group>
+        <instancedMesh ref={meshRef} args={[undefined, undefined, particleCount]} frustumCulled={false}>
+            {/* Simple Box Geometry for cars */}
+            <boxGeometry args={[1, 1, 1]} />
+            <meshStandardMaterial />
+        </instancedMesh>
         
-        {/* Headlights */}
-        <Box args={[0.04, 0.04, 0.02]} position={[0.05, 0.1, 0.2]}>
-             <meshBasicMaterial color="#FFFAA0" />
-        </Box>
-         <Box args={[0.04, 0.04, 0.02]} position={[-0.05, 0.1, 0.2]}>
-             <meshBasicMaterial color="#FFFAA0" />
-        </Box>
-        
-        {/* Taillights */}
-         <Box args={[0.04, 0.04, 0.02]} position={[0.05, 0.1, -0.2]}>
-             <meshBasicMaterial color="#FF0000" />
-        </Box>
-         <Box args={[0.04, 0.04, 0.02]} position={[-0.05, 0.1, -0.2]}>
-             <meshBasicMaterial color="#FF0000" />
-        </Box>
+        {/* Control Beams */}
+        <lineSegments>
+            <bufferGeometry ref={beamGeoRef}>
+                <bufferAttribute
+                    attach="attributes-position"
+                    count={maxBeams * 2}
+                    array={new Float32Array(maxBeams * 2 * 3)}
+                    itemSize={3}
+                />
+            </bufferGeometry>
+            <lineBasicMaterial color="#60a5fa" opacity={0.3} transparent blending={THREE.AdditiveBlending} />
+        </lineSegments>
     </group>
   );
 };
 
-const CityGrid = () => {
-    // Simple grid lines
-    const lines = useMemo(() => {
-        const l = [];
-        const size = 15;
-        for(let i = -size; i <= size; i++) {
-            // Horizontal
-            l.push(
-                <Line 
-                    key={`h-${i}`} 
-                    points={[[-size, 0, i], [size, 0, i]]} 
-                    color="#cbd5e1" 
-                    lineWidth={1} 
-                    opacity={0.2} 
-                    transparent 
-                />
-            );
-            // Vertical
-            l.push(
-                <Line 
-                    key={`v-${i}`} 
-                    points={[[i, 0, -size], [i, 0, size]]} 
-                    color="#cbd5e1" 
-                    lineWidth={1} 
-                    opacity={0.2} 
-                    transparent 
-                />
-            );
+const BlinkingNode: React.FC<{ position: THREE.Vector3; phase: number }> = ({ position, phase }) => {
+    const meshRef = useRef<THREE.Mesh>(null);
+    useFrame((state) => {
+        if(meshRef.current) {
+            const s = 0.1 + 0.1 * Math.sin(state.clock.elapsedTime * 4 + phase);
+            meshRef.current.scale.setScalar(s > 0 ? s : 0.01);
+            (meshRef.current.material as THREE.MeshBasicMaterial).opacity = s > 0.15 ? 1 : 0.3;
         }
-        return l;
+    });
+    return (
+        <mesh ref={meshRef} position={position}>
+            <sphereGeometry args={[0.5, 8, 8]} />
+            <meshBasicMaterial color="#fbbf24" />
+        </mesh>
+    );
+}
+
+const GlobeController = React.forwardRef<THREE.Group, any>((props, ref) => {
+    const globeRef = useRef<THREE.Group>(null);
+
+    useFrame((state) => {
+        const time = state.clock.elapsedTime;
+        
+        if (globeRef.current) {
+            globeRef.current.rotation.y = time * 0.2;
+        }
+
+        if (ref && typeof ref !== 'function' && ref.current) {
+             ref.current.position.y = 8 + Math.sin(time * 0.5) * 0.5;
+        }
+    });
+
+    // Generate random blinking points on surface
+    const points = useMemo(() => {
+        const pts: { pos: THREE.Vector3, phase: number }[] = [];
+        for(let i=0; i<8; i++) {
+            const phi = Math.acos( -1 + ( 2 * i ) / 8 );
+            const theta = Math.sqrt( 8 * Math.PI ) * phi;
+            const r = 1.6; // slightly outside globe
+            pts.push({
+                pos: new THREE.Vector3( r * Math.cos(theta) * Math.sin(phi), r * Math.cos(phi), r * Math.sin(theta) * Math.sin(phi) ),
+                phase: Math.random() * Math.PI * 2
+            });
+        }
+        return pts;
     }, []);
 
-    return <group position={[0, -0.5, 0]}>{lines}</group>;
-}
-
-const JunctionRoad = () => {
     return (
-        <group position={[0, -0.49, 0]}>
-             {/* Main Stem */}
-            <Plane args={[2, 12]} position={[0, 0, 8]} rotation={[-Math.PI/2, 0, 0]}>
-                <meshBasicMaterial color="#e2e8f0" />
-            </Plane>
-            
-            {/* Left Branch */}
-            <mesh position={[-3, 0, -5]} rotation={[-Math.PI/2, 0, 0.3]}>
-                <planeGeometry args={[2, 10]} />
-                <meshBasicMaterial color="#e2e8f0" />
-            </mesh>
+        <group ref={ref} position={[0, 8, 0]}>
+            {/* 3D Label */}
+            <Center position={[0, 2.8, 0]}>
+                <Text3D
+                    font="https://raw.githubusercontent.com/mrdoob/three.js/master/examples/fonts/helvetiker_bold.typeface.json"
+                    size={0.6}
+                    height={0.1}
+                    curveSegments={12}
+                    bevelEnabled
+                    bevelThickness={0.02}
+                    bevelSize={0.02}
+                    bevelOffset={0}
+                    bevelSegments={5}
+                >
+                    CAV ROUTER
+                    <meshStandardMaterial color="#0f172a" />
+                </Text3D>
+            </Center>
+        
+            <group ref={globeRef}>
+                {/* Main Globe Wireframe */}
+                <mesh>
+                    <sphereGeometry args={[1.5, 16, 16]} />
+                    <meshBasicMaterial 
+                        color="#2563EB" 
+                        wireframe 
+                        transparent 
+                        opacity={0.3} 
+                    />
+                </mesh>
+                
+                {/* Inner Core */}
+                <mesh>
+                    <sphereGeometry args={[1.2, 32, 32]} />
+                    <meshStandardMaterial 
+                        color="#3b82f6"
+                        emissive="#2563EB"
+                        emissiveIntensity={0.2}
+                        transparent
+                        opacity={0.8}
+                    />
+                </mesh>
 
-            {/* Right Branch */}
-             <mesh position={[3, 0, -5]} rotation={[-Math.PI/2, 0, -0.3]}>
-                <planeGeometry args={[2, 10]} />
-                <meshBasicMaterial color="#e2e8f0" />
-            </mesh>
+                {/* Blinking Nodes */}
+                {points.map((pt, i) => (
+                    <BlinkingNode key={i} position={pt.pos} phase={pt.phase} />
+                ))}
+            </group>
 
-             {/* Connection */}
-             <mesh position={[0, 0, 2]} rotation={[-Math.PI/2, 0, 0]}>
-                 <circleGeometry args={[2.5, 32]} />
-                 <meshBasicMaterial color="#e2e8f0" />
-             </mesh>
+            {/* Connecting Line to City */}
+            <mesh position={[0, -4, 0]} scale={[0.05, 8, 0.05]}>
+                <cylinderGeometry />
+                <meshBasicMaterial color="#94a3b8" transparent opacity={0.2} />
+            </mesh>
         </group>
-    )
-}
+    );
+});
 
-// --- Scenes ---
+
+// --- MAIN SCENES ---
 
 export const TrafficHeroScene: React.FC = () => {
-  return (
-    <div className="absolute inset-0 z-0 opacity-80 pointer-events-none">
-      <Canvas camera={{ position: [0, 8, 12], fov: 45 }}>
-        <ambientLight intensity={0.7} />
-        <pointLight position={[10, 10, 10]} intensity={1} />
-        <Environment preset="city" />
-        
-        <group rotation={[0, 0, 0]}>
-            <CityGrid />
-            <JunctionRoad />
-            
-            {/* Human Drivers - mostly taking left/crowded path */}
-            {Array.from({ length: 8 }).map((_, i) => (
-                <RoutingVehicle 
-                    key={`human-${i}`} 
-                    type="human"
-                    delay={i * 1.2} 
-                    pathChoice="left"
-                />
-            ))}
+  const { nodes, connections, adjacency } = useCityData(80, 25);
+  const brainRef = useRef<THREE.Group>(null);
 
-            {/* CAV Drivers - taking right/optimized path */}
-            {Array.from({ length: 6 }).map((_, i) => (
-                <RoutingVehicle 
-                    key={`cav-${i}`} 
-                    type="cav"
-                    delay={i * 1.5 + 0.5} 
-                    pathChoice="right"
-                />
-            ))}
-        </group>
+  return (
+    <div className="absolute inset-0 z-0 opacity-100 pointer-events-none">
+      <Canvas shadows dpr={[1, 2]}>
+        <PerspectiveCamera makeDefault position={[0, 25, 40]} fov={30} />
         
-        <Float speed={2} rotationIntensity={0.1} floatIntensity={0.2}>
-           {/* Decor */}
-           <Box args={[1, 4, 1]} position={[-6, 1.5, 0]}><meshStandardMaterial color="#cbd5e1" /></Box>
-           <Box args={[1, 3, 1]} position={[6, 1, 2]}><meshStandardMaterial color="#cbd5e1" /></Box>
-        </Float>
+        <fog attach="fog" args={['#f8fafc', 30, 90]} />
+        
+        <ambientLight intensity={1.5} />
+        <directionalLight position={[20, 40, 20]} intensity={2} castShadow />
+        
+        {/* Ground Plane */}
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.5, 0]} receiveShadow>
+            <planeGeometry args={[200, 200]} />
+            <meshStandardMaterial color="#f1f5f9" />
+        </mesh>
+
+        <Suspense fallback={null}>
+            <group position={[0, 0, 0]}>
+                 <Buildings nodes={nodes} />
+                 <RoadNetwork connections={connections} />
+                 <Traffic nodes={nodes} adjacency={adjacency} brainRef={brainRef} />
+                 <GlobeController ref={brainRef} />
+            </group>
+
+            <Environment preset="city" />
+        </Suspense>
+
+        <OrbitControls 
+            enableZoom={false} 
+            enablePan={false} 
+            autoRotate 
+            autoRotateSpeed={0.5} 
+            maxPolarAngle={Math.PI / 2.2} 
+            minPolarAngle={Math.PI / 6}
+        />
       </Canvas>
     </div>
   );
 };
 
 export const SimulationScene: React.FC = () => {
+  const { nodes, connections, adjacency } = useCityData(60, 30);
+  const dummyRef = useRef(null);
+
   return (
-    <div className="w-full h-full absolute inset-0">
-      <Canvas camera={{ position: [0, 8, 0], fov: 50 }}>
-        <ambientLight intensity={0.5} />
-        <pointLight position={[0, 10, 0]} intensity={2} />
+    <div className="absolute inset-0 z-0 opacity-100 pointer-events-none">
+      <Canvas shadows dpr={[1, 2]}>
+        <PerspectiveCamera makeDefault position={[0, 50, 0]} fov={40} />
         
-        {/* Top down view of a complex intersection */}
-        <group>
-            {/* Roads */}
-            <Box args={[20, 0.1, 2]} position={[0, 0, 0]}><meshStandardMaterial color="#334155" /></Box>
-            <Box args={[2, 0.1, 10]} position={[0, 0, 0]}><meshStandardMaterial color="#334155" /></Box>
-            
-            {/* Road Markings */}
-            <Box args={[1, 0.11, 0.1]} position={[0, 0, 0]}><meshBasicMaterial color="#ffffff" /></Box>
-            
-            {/* Cars */}
-            <Float speed={5} rotationIntensity={0} floatIntensity={0} floatingRange={[0, 0]}>
-                {Array.from({ length: 20 }).map((_, i) => (
-                    <mesh key={i} position={[
-                        (Math.random() - 0.5) * 10, 
-                        0.2, 
-                        (Math.random() - 0.5) * 4
-                    ]}>
-                        <boxGeometry args={[0.5, 0.2, 0.3]} />
-                        <meshStandardMaterial color={Math.random() > 0.5 ? "#F59E0B" : "#ef4444"} />
-                    </mesh>
-                ))}
-            </Float>
-        </group>
+        <ambientLight intensity={0.5} />
+        <pointLight position={[10, 10, 10]} intensity={1} />
+        
+        <Suspense fallback={null}>
+            <group position={[0, 0, 0]}>
+                 {/* Darker roads for dark background */}
+                 <RoadNetwork connections={connections} />
+                 <Traffic nodes={nodes} adjacency={adjacency} brainRef={dummyRef} />
+            </group>
+        </Suspense>
+
+        <OrbitControls 
+            enableZoom={false} 
+            enablePan={false} 
+            autoRotate 
+            autoRotateSpeed={0.8}
+            maxPolarAngle={0} 
+            minPolarAngle={0} 
+        />
       </Canvas>
     </div>
   );
-}
+};

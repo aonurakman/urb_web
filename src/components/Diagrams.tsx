@@ -8,50 +8,120 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Brain, TrendingUp, Map as MapIcon, ChevronRight, Activity } from 'lucide-react';
 
+// --- NETWORK CAROUSEL ---
+export const NetworkCarousel: React.FC = () => {
+  const networks = [
+    { id: 'beynes', name: 'Beynes' },
+    { id: 'provins', name: 'Provins' },
+    { id: 'saint_arnoult', name: 'Saint-Arnoult' },
+    { id: 'nemours', name: 'Nemours' },
+    { id: 'rambouillet', name: 'Rambouillet' },
+    { id: 'melun', name: 'Melun' },
+    { id: 'meaux', name: 'Meaux' },
+    { id: 'coulommiers', name: 'Coulommiers' },
+    { id: 'etampes', name: 'Étampes' },
+    { id: 'nangis', name: 'Nangis' },
+  ];
+
+  return (
+    <div className="w-full overflow-hidden relative group mt-4">
+        {/* Gradient Masks for smooth fade out at edges */}
+        <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-white via-white/80 to-transparent z-10 pointer-events-none"></div>
+        <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-white via-white/80 to-transparent z-10 pointer-events-none"></div>
+        
+        <motion.div 
+            className="flex gap-12 w-max items-center"
+            animate={{ x: ["0%", "-50%"] }}
+            transition={{ 
+                repeat: Infinity, 
+                ease: "linear", 
+                duration: 40 
+            }}
+        >
+            {/* Duplicated list for seamless looping */}
+            {[...networks, ...networks].map((net, i) => (
+                <div key={i} className="flex flex-col items-center gap-3 group/item">
+                    <div className="w-32 h-32 relative bg-slate-50/50 rounded-full flex items-center justify-center border border-slate-100 p-5 transition-all duration-300 group-hover/item:scale-110 group-hover/item:border-urb-blue/30 group-hover/item:bg-blue-50/30">
+                        <img 
+                            src={`https://github.com/COeXISTENCE-PROJECT/Ile-de-france/blob/main/${net.id}/${net.id}_network.png?raw=true`}
+                            alt={net.name}
+                            className="w-full h-full object-contain mix-blend-multiply opacity-90 group-hover/item:opacity-100 transition-opacity duration-300 filter contrast-125"
+                        />
+                    </div>
+                    <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest group-hover/item:text-urb-blue transition-colors">{net.name}</span>
+                </div>
+            ))}
+        </motion.div>
+    </div>
+  )
+}
+
 // --- FRAMEWORK DIAGRAM ---
 export const FrameworkDiagram: React.FC = () => {
   return (
-    <div className="flex flex-col items-center">
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center w-full max-w-4xl relative">
+    <div className="flex flex-col items-center w-full">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-start w-full max-w-6xl relative">
         
         {/* Connecting Line */}
-        <div className="hidden md:block absolute top-1/2 left-0 w-full h-0.5 bg-slate-200 -z-10 transform -translate-y-1/2"></div>
+        <div className="hidden md:block absolute top-16 left-0 w-full h-0.5 bg-slate-200 -z-10"></div>
 
         {/* Step 1: Network */}
-        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center gap-3 relative z-10 h-full">
-            <div className="w-12 h-12 bg-blue-50 text-urb-blue rounded-full flex items-center justify-center border-4 border-white shadow-sm">
-                <MapIcon size={20} />
+        <div className="flex flex-col gap-4 h-full">
+            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center gap-3 relative z-10 h-full">
+                <div className="w-12 h-12 bg-blue-50 text-urb-blue rounded-full flex items-center justify-center border-4 border-white shadow-sm">
+                    <MapIcon size={20} />
+                </div>
+                <h4 className="font-bold text-slate-900">1. Setup</h4>
+                <p className="text-xs text-center text-slate-500">29 Real-world networks & Demand patterns</p>
             </div>
-            <h4 className="font-bold text-slate-900">1. Setup</h4>
-            <p className="text-xs text-center text-slate-500">29 Real-world networks & Demand patterns</p>
+            {/* Tags for Step 1 */}
+            <div className="flex justify-center">
+                 <a href="https://doi.org/10.34740/kaggle/ds/7406751" target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-slate-100 text-slate-600 text-[10px] font-mono rounded border border-slate-200 hover:bg-slate-200 transition-colors">
+                    URB Dataset
+                 </a>
+            </div>
         </div>
 
-        <div className="hidden md:flex justify-center text-slate-300"><ChevronRight /></div>
+        <div className="hidden md:flex justify-center text-slate-300 pt-16"><ChevronRight /></div>
 
         {/* Step 2: Training */}
-        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center gap-3 relative z-10 h-full">
-            <div className="w-12 h-12 bg-amber-50 text-urb-accent rounded-full flex items-center justify-center border-4 border-white shadow-sm">
-                <Brain size={20} />
+        <div className="flex flex-col gap-4 h-full">
+            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center gap-3 relative z-10 h-full">
+                <div className="w-12 h-12 bg-amber-50 text-urb-accent rounded-full flex items-center justify-center border-4 border-white shadow-sm">
+                    <Brain size={20} />
+                </div>
+                <h4 className="font-bold text-slate-900">2. Training</h4>
+                <p className="text-xs text-center text-slate-500">MARL Algorithms (IQL, QMIX, etc.)</p>
             </div>
-            <h4 className="font-bold text-slate-900">2. Training</h4>
-            <p className="text-xs text-center text-slate-500">MARL Algorithms (IQL, QMIX, etc.)</p>
+            {/* Tags for Step 2 */}
+            <div className="flex flex-wrap justify-center gap-2">
+                 <a href="https://eclipse.dev/sumo/" target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-slate-800 text-white text-[10px] font-mono rounded hover:bg-slate-700 transition-colors">
+                    SUMO Simulator
+                 </a>
+                 <a href="https://github.com/COeXISTENCE-PROJECT/RouteRL" target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-slate-800 text-white text-[10px] font-mono rounded hover:bg-slate-700 transition-colors">
+                    RouteRL
+                 </a>
+            </div>
         </div>
 
-        <div className="hidden md:flex justify-center text-slate-300"><ChevronRight /></div>
+        <div className="hidden md:flex justify-center text-slate-300 pt-16"><ChevronRight /></div>
 
         {/* Step 3: Assessment */}
-        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center gap-3 relative z-10 h-full">
-            <div className="w-12 h-12 bg-green-50 text-green-600 rounded-full flex items-center justify-center border-4 border-white shadow-sm">
-                <TrendingUp size={20} />
+        <div className="flex flex-col gap-4 h-full">
+            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center gap-3 relative z-10 h-full">
+                <div className="w-12 h-12 bg-green-50 text-green-600 rounded-full flex items-center justify-center border-4 border-white shadow-sm">
+                    <TrendingUp size={20} />
+                </div>
+                <h4 className="font-bold text-slate-900">3. Assessment</h4>
+                <p className="text-xs text-center text-slate-500">Compare Travel Times & Congestion</p>
             </div>
-            <h4 className="font-bold text-slate-900">3. Assessment</h4>
-            <p className="text-xs text-center text-slate-500">Compare Travel Times & Emissions</p>
+            {/* Tags for Step 3 */}
+             <div className="flex justify-center">
+                 <span className="px-3 py-1.5 bg-slate-100 text-slate-600 text-[10px] font-mono rounded border border-slate-200">
+                    URB Metrics
+                 </span>
+            </div>
         </div>
-      </div>
-      
-      <div className="mt-8 flex gap-4">
-         <div className="px-4 py-2 bg-slate-800 text-white text-xs font-mono rounded-md">SUMO Simulator</div>
-         <div className="px-4 py-2 bg-slate-800 text-white text-xs font-mono rounded-md">RouteRL</div>
       </div>
     </div>
   );
@@ -61,38 +131,38 @@ export const FrameworkDiagram: React.FC = () => {
 export const BenchmarkResultsDiagram: React.FC = () => {
     const [scenario, setScenario] = useState<'st_arnoult' | 'provins' | 'ingolstadt'>('st_arnoult');
 
-    // Data from Table 1 of the paper
+    // Data from Table 1 of the paper (t_CAV values)
     const data = {
         st_arnoult: {
-            human: 3.15,
-            aon: 3.15,
-            random: 3.38,
-            qmix: 3.24,
-            ippo: 3.28,
-            iql: 3.36,
-            mappo: 3.35,
+            human: 3.15, // t_pre
+            aon: 3.01,
+            random: 3.58,
+            qmix: 3.21,
+            ippo: 3.33,
+            iql: 3.53,
+            mappo: 3.51,
             title: "St. Arnoult (Small)",
             cav_wins: "80%" // QMIX
         },
         provins: {
-            human: 2.80,
-            aon: 2.81,
-            random: 2.93,
-            qmix: 2.96,
-            ippo: 2.90,
-            iql: 2.91,
-            mappo: 2.93,
+            human: 2.80, // t_pre
+            aon: 2.76,
+            random: 3.04,
+            qmix: 3.14,
+            ippo: 2.98,
+            iql: 3.01,
+            mappo: 3.05,
             title: "Provins (Medium)",
             cav_wins: "0%"
         },
         ingolstadt: {
-            human: 4.21,
-            aon: 4.29,
-            random: 4.45,
-            qmix: 4.50,
-            ippo: 4.41,
-            iql: 4.46,
-            mappo: 4.45,
+            human: 4.21, // t_pre
+            aon: 4.37,
+            random: 4.81,
+            qmix: 4.87,
+            ippo: 4.71,
+            iql: 4.81,
+            mappo: 4.82,
             title: "Ingolstadt (Large)",
             cav_wins: "0%"
         }
@@ -109,10 +179,9 @@ export const BenchmarkResultsDiagram: React.FC = () => {
         currentData.mappo
     ];
     const maxVal = Math.max(...allValues) * 1.05;
-    const minVal = Math.min(...allValues) * 0.9;
 
     const Bar = ({ label, value, color, highlight = false }: { label: string, value: number, color: string, highlight?: boolean }) => {
-        // Calculate relative width based on min-max range for better visualization of differences
+        // Calculate relative width based on max range
         const percentage = ((value) / maxVal) * 100;
         
         return (
@@ -138,7 +207,7 @@ export const BenchmarkResultsDiagram: React.FC = () => {
             <div className="md:col-span-4 flex flex-col justify-center">
                 <h3 className="text-xl font-bold mb-4">{currentData.title}</h3>
                 <p className="text-sm text-slate-600 mb-6">
-                    Mean travel times (lower is better).
+                    Mean CAV travel times (t_CAV). Lower is better.
                     {scenario === 'st_arnoult' 
                         ? " In small networks, QMIX occasionally beats humans." 
                         : " In larger networks, MARL algorithms struggle to match human efficiency."}
