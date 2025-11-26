@@ -117,7 +117,7 @@ const App: React.FC = () => {
         }`}
       >
         <div className={`
-            container mx-auto px-6 flex justify-between items-center transition-all duration-300
+            w-[95%] max-w-[1920px] mx-auto px-4 xl:px-6 flex justify-between items-center transition-all duration-300
             bg-white/95 backdrop-blur-md shadow-lg rounded-2xl py-3 border border-slate-100
         `}>
           <div className="flex items-center gap-4 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
@@ -138,53 +138,55 @@ const App: React.FC = () => {
             </span>
           </div>
           
-          <div className="hidden lg:flex items-center gap-6 text-sm font-medium text-slate-600">
-            <a href="#authors" onClick={scrollToSection('authors')} className="hover:text-urb-blue transition-colors">Team</a>
-            <a href="#overview" onClick={scrollToSection('overview')} className="hover:text-urb-blue transition-colors">Overview</a>
-            <a href="#framework" onClick={scrollToSection('framework')} className="hover:text-urb-blue transition-colors">Framework</a>
-            <a href="#results" onClick={scrollToSection('results')} className="hover:text-urb-blue transition-colors">Results</a>
-            <a href="#getting-started" onClick={scrollToSection('getting-started')} className="hover:text-urb-blue transition-colors">Get Started</a>
-            <a href="#contributing" onClick={scrollToSection('contributing')} className="hover:text-urb-blue transition-colors">Contributing</a>
+          {/* Responsive Desktop Menu: XL (Laptop) = Compact, 2XL (Large Screen) = Spacious */}
+          <div className="hidden xl:flex items-center gap-2 2xl:gap-8 text-xs 2xl:text-sm font-medium text-slate-600">
+            <a href="#authors" onClick={scrollToSection('authors')} className="hover:text-urb-blue transition-colors px-2 py-1">Team</a>
+            <a href="#overview" onClick={scrollToSection('overview')} className="hover:text-urb-blue transition-colors px-2 py-1">Overview</a>
+            <a href="#framework" onClick={scrollToSection('framework')} className="hover:text-urb-blue transition-colors px-2 py-1">Framework</a>
+            <a href="#results" onClick={scrollToSection('results')} className="hover:text-urb-blue transition-colors px-2 py-1">Results</a>
+            <a href="#getting-started" onClick={scrollToSection('getting-started')} className="hover:text-urb-blue transition-colors whitespace-nowrap px-2 py-1">Get Started</a>
+            <a href="#contributing" onClick={scrollToSection('contributing')} className="hover:text-urb-blue transition-colors px-2 py-1">Contributing</a>
             
-            <div className="flex items-center gap-3 ml-2">
+            <div className="flex items-center gap-2 2xl:gap-4 ml-2">
               <a 
                 href="https://www.rafalkucharskilab.pl/COeXISTENCE/" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 px-4 bg-white text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors h-12 box-border"
+                className="flex items-center gap-2 px-3 bg-white text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors h-10 2xl:h-12 box-border"
                 title="COeXISTENCE Project"
               >
                 <img 
                     src="https://github.com/aonurakman/assets/blob/main/icons/coexistence_small.png?raw=true" 
                     alt="Logo" 
-                    className="h-6 w-auto object-contain" 
+                    className="h-5 2xl:h-6 w-auto object-contain" 
                 />
-                <span className="font-bold tracking-wider text-xs">COeXISTENCE</span>
+                <span className="font-bold tracking-wider text-xs hidden 2xl:inline">COeXISTENCE</span>
               </a>
               <a 
                 href="https://github.com/COeXISTENCE-PROJECT/URB" 
                 target="_blank" 
                 rel="noopener noreferrer" 
-                className="flex items-center gap-2 px-5 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors h-12 box-border"
+                className="flex items-center gap-2 px-3 2xl:px-4 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors h-10 2xl:h-12 box-border"
                 title="View Code on GitHub"
               >
-                <Github size={20} />
-                <span className="font-semibold">Code</span>
+                <Github size={18} className="2xl:w-5 2xl:h-5" />
+                <span className="font-semibold hidden 2xl:inline">Code</span>
               </a>
               <a 
                 href="https://arxiv.org/abs/2505.17734" 
                 target="_blank" 
                 rel="noopener noreferrer" 
-                className="flex items-center gap-2 px-5 bg-red-50 text-red-700 border border-red-200 rounded-lg hover:bg-red-100 transition-colors h-12 box-border"
+                className="flex items-center gap-2 px-3 2xl:px-4 bg-red-50 text-red-700 border border-red-200 rounded-lg hover:bg-red-100 transition-colors h-10 2xl:h-12 box-border"
                 title="View Paper on ArXiv"
               >
-                <img src="https://github.com/aonurakman/assets/blob/main/icons/arxiv.svg.png?raw=true" alt="ArXiv" className="h-6 w-auto object-contain" />
-                <span className="font-semibold">Paper</span>
+                <img src="https://github.com/aonurakman/assets/blob/main/icons/arxiv.svg.png?raw=true" alt="ArXiv" className="h-5 2xl:h-6 w-auto object-contain" />
+                <span className="font-semibold hidden 2xl:inline">Paper</span>
               </a>
             </div>
           </div>
 
-          <button className="lg:hidden text-slate-900 p-2" onClick={() => setMenuOpen(!menuOpen)}>
+          {/* Mobile Toggle */}
+          <button className="xl:hidden text-slate-900 p-2" onClick={() => setMenuOpen(!menuOpen)}>
             {menuOpen ? <X /> : <Menu />}
           </button>
         </div>
@@ -220,7 +222,7 @@ const App: React.FC = () => {
       )}
 
       {/* Hero Section - Updated with mobile top padding and alignment fix */}
-      <header className="relative min-h-screen flex flex-col justify-start items-center pt-32 md:justify-center md:pt-0 overflow-hidden bg-slate-50">
+      <header className="relative min-h-screen flex flex-col justify-start items-center pt-32 pb-40 md:justify-center md:pt-0 md:pb-0 overflow-hidden bg-slate-50">
         <TrafficHeroScene />
         
         {/* Gradient Overlay */}
@@ -251,9 +253,6 @@ const App: React.FC = () => {
           </p>
           
           <div className="flex flex-col md:flex-row justify-center gap-4">
-             <a href="#overview" onClick={scrollToSection('overview')} className="px-8 py-3 bg-urb-blue text-white font-medium rounded-lg hover:bg-blue-600 transition-colors shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2">
-                Explore The Benchmark
-             </a>
              <a 
                 href="https://github.com/COeXISTENCE-PROJECT/URB" 
                 target="_blank" 
@@ -263,6 +262,15 @@ const App: React.FC = () => {
                 <Github size={20} />
                 <span>Code</span>
              </a>
+             <a 
+                href="https://arxiv.org/abs/2505.17734" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="px-8 py-3 bg-red-50 text-red-700 font-medium rounded-lg border border-red-200 hover:bg-red-100 transition-colors shadow-lg shadow-red-500/10 flex items-center justify-center gap-2"
+             >
+                <img src="https://github.com/aonurakman/assets/blob/main/icons/arxiv.svg.png?raw=true" className="h-5 w-auto object-contain" alt="ArXiv" />
+                <span>Paper</span>
+             </a>
              <a href="https://doi.org/10.34740/kaggle/ds/7406751" target="_blank" rel="noopener noreferrer" className="px-8 py-3 bg-white text-slate-700 font-medium rounded-lg border border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition-colors flex items-center justify-center gap-2">
                 <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f4/Kaggle_Logo.svg/2560px-Kaggle_Logo.svg.png" className="h-4 w-auto object-contain" alt="Kaggle" />
                 <span>Get Data</span>
@@ -270,7 +278,8 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        <div className="absolute bottom-10 left-0 right-0 flex justify-center animate-bounce opacity-50">
+        {/* Arrow Down: Relative on mobile to prevent overlap, Absolute on desktop */}
+        <div className="flex justify-center animate-bounce opacity-50 mt-20 md:absolute md:bottom-10 md:left-0 md:right-0 md:mt-0">
            <ArrowDown className="text-slate-400" />
         </div>
       </header>
