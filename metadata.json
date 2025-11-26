@@ -1,5 +1,5 @@
 {
-  "name": "Research Visualization",
-  "description": "Research paper reimagined as an elegant, interactive narrative site.",
+  "name": "Urban Routing Benchmark",
+  "description": "URB - Urban Routing Benchmark - Benchmarking MARL algorithms on the fleet routing tasks.",
   "requestFramePermissions": []
 }
