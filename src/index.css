@@ -1,12 +1,9 @@
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Standard CSS for custom animations */
+/* Since we use Tailwind CDN, we don't use @tailwind directives here to avoid build errors */
 
-@layer utilities {
-  .animate-fade-in {
-    animation: fadeIn 0.3s ease-in-out;
-  }
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-in-out;
 }
 
 @keyframes fadeIn {

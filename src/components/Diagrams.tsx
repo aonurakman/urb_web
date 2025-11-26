@@ -24,31 +24,28 @@ export const NetworkCarousel: React.FC = () => {
   ];
 
   return (
-    <div className="w-full overflow-hidden relative group mt-4">
-        {/* Gradient Masks for smooth fade out at edges */}
-        <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-white via-white/80 to-transparent z-10 pointer-events-none"></div>
-        <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-white via-white/80 to-transparent z-10 pointer-events-none"></div>
-        
+    <div className="w-full overflow-hidden relative group mt-12 bg-white py-8 rounded-xl shadow-inner border border-slate-100">
         <motion.div 
-            className="flex gap-12 w-max items-center"
+            className="flex gap-16 w-max items-center px-4"
             animate={{ x: ["0%", "-50%"] }}
             transition={{ 
                 repeat: Infinity, 
                 ease: "linear", 
-                duration: 40 
+                duration: 50 
             }}
         >
             {/* Duplicated list for seamless looping */}
             {[...networks, ...networks].map((net, i) => (
-                <div key={i} className="flex flex-col items-center gap-3 group/item">
-                    <div className="w-32 h-32 relative bg-slate-50/50 rounded-full flex items-center justify-center border border-slate-100 p-5 transition-all duration-300 group-hover/item:scale-110 group-hover/item:border-urb-blue/30 group-hover/item:bg-blue-50/30">
+                <div key={i} className="flex flex-col items-center gap-4 group/item cursor-pointer">
+                    <div className="w-64 h-48 relative bg-white rounded-lg border border-slate-200 p-2 transition-all duration-300 shadow-sm group-hover/item:scale-110 group-hover/item:border-urb-blue group-hover/item:shadow-md z-10 overflow-hidden flex items-center justify-center">
+                        {/* Filter: mix-blend-multiply makes white transparent, contrast sharpens lines */}
                         <img 
                             src={`https://github.com/COeXISTENCE-PROJECT/Ile-de-france/blob/main/${net.id}/${net.id}_network.png?raw=true`}
                             alt={net.name}
-                            className="w-full h-full object-contain mix-blend-multiply opacity-90 group-hover/item:opacity-100 transition-opacity duration-300 filter contrast-125"
+                            className="w-full h-full object-contain mix-blend-multiply contrast-125 transition-all duration-300"
                         />
                     </div>
-                    <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest group-hover/item:text-urb-blue transition-colors">{net.name}</span>
+                    <span className="text-xs font-mono font-bold text-slate-400 uppercase tracking-widest group-hover/item:text-urb-blue transition-colors">{net.name}</span>
                 </div>
             ))}
         </motion.div>
@@ -58,6 +55,9 @@ export const NetworkCarousel: React.FC = () => {
 
 // --- FRAMEWORK DIAGRAM ---
 export const FrameworkDiagram: React.FC = () => {
+  // Unified Tag Style
+  const tagStyle = "px-3 py-1.5 bg-slate-100 text-slate-600 text-[10px] font-mono rounded border border-slate-200 hover:bg-slate-200 transition-colors";
+
   return (
     <div className="flex flex-col items-center w-full">
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-start w-full max-w-6xl relative">
@@ -76,7 +76,7 @@ export const FrameworkDiagram: React.FC = () => {
             </div>
             {/* Tags for Step 1 */}
             <div className="flex justify-center">
-                 <a href="https://doi.org/10.34740/kaggle/ds/7406751" target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-slate-100 text-slate-600 text-[10px] font-mono rounded border border-slate-200 hover:bg-slate-200 transition-colors">
+                 <a href="https://doi.org/10.34740/kaggle/ds/7406751" target="_blank" rel="noopener noreferrer" className={tagStyle}>
                     URB Dataset
                  </a>
             </div>
@@ -95,10 +95,10 @@ export const FrameworkDiagram: React.FC = () => {
             </div>
             {/* Tags for Step 2 */}
             <div className="flex flex-wrap justify-center gap-2">
-                 <a href="https://eclipse.dev/sumo/" target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-slate-800 text-white text-[10px] font-mono rounded hover:bg-slate-700 transition-colors">
+                 <a href="https://eclipse.dev/sumo/" target="_blank" rel="noopener noreferrer" className={tagStyle}>
                     SUMO Simulator
                  </a>
-                 <a href="https://github.com/COeXISTENCE-PROJECT/RouteRL" target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-slate-800 text-white text-[10px] font-mono rounded hover:bg-slate-700 transition-colors">
+                 <a href="https://github.com/COeXISTENCE-PROJECT/RouteRL" target="_blank" rel="noopener noreferrer" className={tagStyle}>
                     RouteRL
                  </a>
             </div>
@@ -117,7 +117,7 @@ export const FrameworkDiagram: React.FC = () => {
             </div>
             {/* Tags for Step 3 */}
              <div className="flex justify-center">
-                 <span className="px-3 py-1.5 bg-slate-100 text-slate-600 text-[10px] font-mono rounded border border-slate-200">
+                 <span className={tagStyle}>
                     URB Metrics
                  </span>
             </div>
@@ -206,12 +206,13 @@ export const BenchmarkResultsDiagram: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
             <div className="md:col-span-4 flex flex-col justify-center">
                 <h3 className="text-xl font-bold mb-4">{currentData.title}</h3>
-                <p className="text-sm text-slate-600 mb-6">
+                <p className="text-sm text-slate-600 mb-4">
                     Mean CAV travel times (t_CAV). Lower is better.
                     {scenario === 'st_arnoult' 
                         ? " In small networks, QMIX occasionally beats humans." 
                         : " In larger networks, MARL algorithms struggle to match human efficiency."}
                 </p>
+
                 <div className="flex flex-col gap-2">
                     <button onClick={() => setScenario('st_arnoult')} className={`px-4 py-2 rounded-lg text-left text-sm font-medium transition-colors ${scenario === 'st_arnoult' ? 'bg-urb-blue text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>St. Arnoult</button>
                     <button onClick={() => setScenario('provins')} className={`px-4 py-2 rounded-lg text-left text-sm font-medium transition-colors ${scenario === 'provins' ? 'bg-urb-blue text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>Provins</button>
@@ -239,7 +240,7 @@ export const BenchmarkResultsDiagram: React.FC = () => {
                  
                  <div className="mt-4 p-4 bg-slate-50 rounded-lg flex items-center gap-3 text-xs text-slate-500">
                     <Activity size={16} />
-                    <span>In this scenario, RL agents achieved a win rate of <strong className="text-slate-900">{currentData.cav_wins}</strong> against human performance.</span>
+                    <span>In this scenario, RL agents achieved a win rate of <strong className="text-slate-900">{currentData.cav_wins}</strong> against URB baselines.</span>
                  </div>
             </div>
         </div>

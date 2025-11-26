@@ -1,15 +1,13 @@
 
-
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
 */
 
 import React, { useState, useEffect } from 'react';
-import { TrafficHeroScene, SimulationScene } from '../components/QuantumScene';
-import { FrameworkDiagram, BenchmarkResultsDiagram, NetworkCarousel } from './components/Diagrams';
-import { ArrowDown, Menu, X, Github, ExternalLink, Map, Activity, BarChart3, Database, Cpu, GitFork, Users, Code, Trophy } from 'lucide-react';
+import { TrafficHeroScene, SimulationScene } from './src/components/QuantumScene';
+import { FrameworkDiagram, BenchmarkResultsDiagram, NetworkCarousel } from './src/components/Diagrams';
+import { ArrowDown, Menu, X, Github, ExternalLink, Map, Activity, BarChart3, Database, Cpu, GitFork, Users, Code, Trophy, Terminal, Copy, Check, Play } from 'lucide-react';
 
 interface Author {
     name: string;
@@ -76,6 +74,7 @@ const UrbLogo = () => (
 const App: React.FC = () => {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -95,18 +94,31 @@ const App: React.FC = () => {
     }
   };
 
+  const copyCitation = () => {
+    const citation = `@inproceedings{URB,
+  title={URB -- Urban Routing Benchmark for RL-equipped Connected Autonomous Vehicles},
+  author={Akman, Ahmet Onur and Psarou, Anastasia and Hoffmann, Micha{\\l} and Gorczyca, {\\L}ukasz and Kowalski, {\\L}ukasz and Gora, Pawe{\\l} and Jamr{\\'o}z, Grzegorz and Kucharski, Rafa{\\l}},
+  booktitle={Proceedings of the Thirty-Ninth Annual Conference on Neural Information Processing Systems (NeurIPS 2025) Datasets and Benchmarks Track},
+  month={December},
+  year={2025}
+}`;
+    navigator.clipboard.writeText(citation);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 selection:bg-urb-blue selection:text-white font-sans">
       
-      {/* Navigation */}
+      {/* Navigation - Smart hiding */}
       <nav 
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-            scrolled ? 'py-4 px-4' : 'py-6 px-0'
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 transform ${
+            scrolled ? 'translate-y-0 py-4 px-4' : '-translate-y-full py-6 px-0'
         }`}
       >
         <div className={`
             container mx-auto px-6 flex justify-between items-center transition-all duration-300
-            ${scrolled ? 'bg-white/95 backdrop-blur-md shadow-lg rounded-2xl py-3 border border-slate-100' : 'bg-transparent'}
+            bg-white/95 backdrop-blur-md shadow-lg rounded-2xl py-3 border border-slate-100
         `}>
           <div className="flex items-center gap-4 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
             {/* Enlarged 1.5x (w-16 -> w-24) */}
@@ -118,10 +130,10 @@ const App: React.FC = () => {
                 />
             </div>
             {/* Single line text, adjusted font */}
-            <span className={`font-bold text-xl md:text-2xl tracking-tighter leading-none ${scrolled ? 'text-slate-900' : 'text-slate-900'} hidden md:block whitespace-nowrap`}>
+            <span className={`font-bold text-xl md:text-2xl tracking-tighter leading-none text-slate-900 hidden md:block whitespace-nowrap`}>
               Urban Routing Benchmark
             </span>
-             <span className={`font-bold text-xl tracking-tight ${scrolled ? 'text-slate-900' : 'text-slate-900'} md:hidden`}>
+             <span className={`font-bold text-xl tracking-tight text-slate-900 md:hidden`}>
               URB
             </span>
           </div>
@@ -131,16 +143,23 @@ const App: React.FC = () => {
             <a href="#overview" onClick={scrollToSection('overview')} className="hover:text-urb-blue transition-colors">Overview</a>
             <a href="#framework" onClick={scrollToSection('framework')} className="hover:text-urb-blue transition-colors">Framework</a>
             <a href="#results" onClick={scrollToSection('results')} className="hover:text-urb-blue transition-colors">Results</a>
-            <a href="#contributing" onClick={scrollToSection('contributing')} className="hover:text-urb-blue transition-colors">Contribute</a>
+            <a href="#getting-started" onClick={scrollToSection('getting-started')} className="hover:text-urb-blue transition-colors">Get Started</a>
+            <a href="#contributing" onClick={scrollToSection('contributing')} className="hover:text-urb-blue transition-colors">Contributing</a>
             
             <div className="flex items-center gap-3 ml-2">
               <a 
                 href="https://www.rafalkucharskilab.pl/COeXISTENCE/" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors text-xs font-bold tracking-wider"
+                className="flex items-center gap-2 px-4 bg-white text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors h-12 box-border"
+                title="COeXISTENCE Project"
               >
-                COeXISTENCE
+                <img 
+                    src="https://github.com/aonurakman/assets/blob/main/icons/coexistence_small.png?raw=true" 
+                    alt="Logo" 
+                    className="h-6 w-auto object-contain" 
+                />
+                <span className="font-bold tracking-wider text-xs">COeXISTENCE</span>
               </a>
               <a 
                 href="https://github.com/COeXISTENCE-PROJECT/URB" 
@@ -159,7 +178,7 @@ const App: React.FC = () => {
                 className="flex items-center gap-2 px-5 bg-red-50 text-red-700 border border-red-200 rounded-lg hover:bg-red-100 transition-colors h-12 box-border"
                 title="View Paper on ArXiv"
               >
-                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/ArXiv_logo_2022.svg/1024px-ArXiv_logo_2022.svg.png" alt="ArXiv" className="h-6 w-auto object-contain" />
+                <img src="https://github.com/aonurakman/assets/blob/main/icons/arxiv.svg.png?raw=true" alt="ArXiv" className="h-6 w-auto object-contain" />
                 <span className="font-semibold">Paper</span>
               </a>
             </div>
@@ -178,13 +197,19 @@ const App: React.FC = () => {
             <a href="#overview" onClick={scrollToSection('overview')}>Overview</a>
             <a href="#framework" onClick={scrollToSection('framework')}>Framework</a>
             <a href="#results" onClick={scrollToSection('results')}>Results</a>
-            <a href="#contributing" onClick={scrollToSection('contributing')}>Contribute</a>
+            <a href="#getting-started" onClick={scrollToSection('getting-started')}>Get Started</a>
+            <a href="#contributing" onClick={scrollToSection('contributing')}>Contributing</a>
             <div className="flex flex-col gap-4 mt-4 w-64">
-              <a href="https://www.rafalkucharskilab.pl/COeXISTENCE/" className="flex items-center justify-center gap-2 px-6 py-3 bg-slate-700 text-white rounded-lg">
+              <a href="https://www.rafalkucharskilab.pl/COeXISTENCE/" className="flex items-center justify-center gap-2 px-6 py-3 bg-white border border-slate-200 text-slate-700 rounded-lg">
+                <img 
+                    src="https://github.com/aonurakman/assets/blob/main/icons/coexistence_small.png?raw=true" 
+                    alt="Logo" 
+                    className="h-6 w-auto object-contain" 
+                />
                 <span className="font-semibold">COeXISTENCE</span>
               </a>
               <a href="https://arxiv.org/abs/2505.17734" className="flex items-center justify-center gap-2 px-6 py-3 bg-red-50 text-red-700 border border-red-200 rounded-lg">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/ArXiv_logo_2022.svg/1024px-ArXiv_logo_2022.svg.png" alt="ArXiv" className="h-6 w-auto object-contain" />
+                <img src="https://github.com/aonurakman/assets/blob/main/icons/arxiv.svg.png?raw=true" alt="ArXiv" className="h-6 w-auto object-contain" />
                 <span className="font-semibold ml-2">Paper</span>
               </a>
               <a href="https://github.com/COeXISTENCE-PROJECT/URB" className="flex items-center justify-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-lg">
@@ -194,14 +219,14 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* Hero Section */}
-      <header className="relative h-screen flex items-center justify-center overflow-hidden bg-slate-50 pt-32 md:pt-20">
+      {/* Hero Section - Updated with mobile top padding and alignment fix */}
+      <header className="relative min-h-screen flex flex-col justify-start items-center pt-32 md:justify-center md:pt-0 overflow-hidden bg-slate-50">
         <TrafficHeroScene />
         
         {/* Gradient Overlay */}
         <div className="absolute inset-0 z-0 pointer-events-none bg-[radial-gradient(circle_at_center,rgba(248,250,252,0.8)_0%,rgba(248,250,252,0.4)_60%,rgba(248,250,252,0)_100%)]" />
 
-        <div className="relative z-10 container mx-auto px-6 text-center max-w-4xl pt-12 md:pt-0">
+        <div className="relative z-10 container mx-auto px-6 text-center max-w-4xl">
           <UrbLogo />
           
           {/* Reduced Badge size as requested */}
@@ -278,7 +303,7 @@ const App: React.FC = () => {
                      Connected Autonomous Vehicles (CAVs) promise to reduce congestion by optimizing routing decisions collectively. However, standard benchmarks for this complex, multi-agent problem have been missing.
                    </p>
                    <p className="text-lg text-slate-600 mb-6 leading-relaxed">
-                     <strong>URB</strong> fills this gap. It integrates the microscopic traffic simulator SUMO with PyTorch-based RL libraries to create a realistic testing ground. It features <strong>29 real-world networks</strong>, calibrated demand patterns, and a suite of baseline algorithms.
+                     <strong>URB</strong> fills this gap. It integrates the microscopic traffic simulator SUMO with <strong>RL-based solutions</strong> to create a realistic testing ground. It features <strong>29 real-world networks</strong>, calibrated demand patterns, and a suite of baseline algorithms.
                    </p>
                    <div className="flex flex-wrap gap-4 mt-8">
                       <div className="px-4 py-2 bg-slate-50 border border-slate-100 rounded-md text-sm font-semibold text-slate-600">29 Networks</div>
@@ -406,7 +431,12 @@ const App: React.FC = () => {
                 <div className="max-w-4xl mx-auto mb-16">
                     <h2 className="text-3xl md:text-4xl font-bold mb-6 text-slate-900 text-center">Benchmark Results</h2>
                     <p className="text-lg text-slate-600 leading-relaxed text-center">
-                        We evaluated state-of-the-art MARL algorithms (IPPO, IQL, MAPPO, QMIX) against human baselines. The results reveal a significant challenge: <strong>current algorithms rarely outperform human drivers</strong> in complex, congested networks.
+                        We evaluated state-of-the-art MARL algorithms (IPPO, IQL, MAPPO, QMIX) against <strong>URB baselines</strong>. The results reveal a significant challenge: <strong>current algorithms rarely outperform human drivers</strong> in complex, congested networks.
+                    </p>
+                    <p className="text-center mt-4">
+                        <a href="https://arxiv.org/abs/2505.17734" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-urb-blue hover:underline font-medium bg-blue-50 px-3 py-1 rounded-full text-sm">
+                            Results reported in our study: URB (arXiv:2505.17734) <ExternalLink size={12}/>
+                        </a>
                     </p>
                 </div>
                 
@@ -431,8 +461,66 @@ const App: React.FC = () => {
             </div>
         </section>
 
+        {/* Getting Started */}
+        <section id="getting-started" className="py-24 bg-slate-50 border-t border-slate-200">
+            <div className="container mx-auto px-6">
+                <div className="text-center max-w-3xl mx-auto mb-12">
+                    <span className="text-urb-blue font-bold tracking-wider uppercase text-sm">Quick Start</span>
+                    <h2 className="text-3xl md:text-4xl font-bold mt-2 mb-6 text-slate-900">Start Benchmarking</h2>
+                    <p className="text-slate-600">
+                        Get up and running with URB in minutes. Follow these steps to clone the repository, install dependencies, and run your first experiment.
+                    </p>
+                </div>
+
+                <div className="max-w-4xl mx-auto bg-slate-900 rounded-xl overflow-hidden shadow-2xl ring-1 ring-white/10">
+                    <div className="flex items-center gap-2 px-4 py-3 bg-slate-800 border-b border-slate-700">
+                        <div className="flex gap-1.5">
+                            <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                            <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                            <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                        </div>
+                        <div className="flex-1 text-center text-xs font-mono text-slate-400">urb_experiment.sh</div>
+                    </div>
+                    <div className="p-6 font-mono text-sm text-slate-300 space-y-6 overflow-x-auto">
+                        <div>
+                            <div className="flex items-center gap-2 text-slate-500 mb-1 select-none">
+                                <Terminal size={14} />
+                                <span># 1. Clone the repository</span>
+                            </div>
+                            <div className="flex gap-2">
+                                <span className="text-emerald-400 select-none">$</span>
+                                <span>git clone https://github.com/COeXISTENCE-PROJECT/URB.git</span>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div className="flex items-center gap-2 text-slate-500 mb-1 select-none">
+                                <Terminal size={14} />
+                                <span># 2. Install dependencies</span>
+                            </div>
+                            <div className="flex gap-2">
+                                <span className="text-emerald-400 select-none">$</span>
+                                <span>cd URB && pip install -r requirements.txt</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div className="flex items-center gap-2 text-slate-500 mb-1 select-none">
+                                <Play size={14} />
+                                <span># 3. Run an example experiment (QMIX in St. Arnoult)</span>
+                            </div>
+                            <div className="flex gap-2">
+                                <span className="text-emerald-400 select-none">$</span>
+                                <span className="whitespace-pre-wrap">python scripts/qmix_torchrl.py --id demo --alg-conf config3 --task-conf config4 --net saint_arnoult</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         {/* Contributing Section */}
-        <section id="contributing" className="py-24 bg-slate-50 border-t border-slate-200">
+        <section id="contributing" className="py-24 bg-white border-t border-slate-200">
             <div className="container mx-auto px-6 max-w-4xl text-center">
                  <div className="inline-flex items-center justify-center w-16 h-16 bg-urb-blue rounded-full text-white mb-6 shadow-lg shadow-blue-500/30">
                     <Trophy size={32} />
@@ -442,7 +530,7 @@ const App: React.FC = () => {
                     Users can implement their solutions and use URB components by extending the provided template script with their method, and then use it just like any other URB experiment script.
                  </p>
                  
-                 <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm text-left">
+                 <div className="bg-slate-50 rounded-xl border border-slate-200 p-8 shadow-sm text-left">
                     <div className="flex items-center gap-3 mb-4 text-slate-900 font-bold">
                         <Code className="text-urb-blue" />
                         <h3>How to Contribute</h3>
@@ -473,20 +561,62 @@ const App: React.FC = () => {
             </div>
         </section>
 
-        <div className="py-12 bg-white text-center border-t border-slate-100">
-            <p className="text-slate-500 text-sm mb-4">Published at 39th Conference on Neural Information Processing Systems (NeurIPS 2025)</p>
-            <a href="https://github.com/COeXISTENCE-PROJECT/URB" className="inline-flex items-center gap-2 text-urb-blue hover:text-blue-700 font-medium">
-                View Project on GitHub <ExternalLink size={16} />
-            </a>
-        </div>
+        {/* Citation */}
+        <section className="py-16 bg-slate-50 border-t border-slate-200">
+            <div className="container mx-auto px-6 max-w-4xl">
+                <h3 className="text-2xl font-bold text-slate-900 mb-6 text-center">Citation</h3>
+                <div className="relative group">
+                    <pre className="bg-white p-6 rounded-lg border border-slate-200 text-xs md:text-sm text-slate-600 overflow-x-auto font-mono leading-relaxed shadow-sm">
+{`@inproceedings{URB,
+  title={URB -- Urban Routing Benchmark for RL-equipped Connected Autonomous Vehicles},
+  author={Akman, Ahmet Onur and Psarou, Anastasia and Hoffmann, Micha{\\l} and Gorczyca, {\\L}ukasz and Kowalski, {\\L}ukasz and Gora, Pawe{\\l} and Jamr{\\'o}z, Grzegorz and Kucharski, Rafa{\\l}},
+  booktitle={Proceedings of the Thirty-Ninth Annual Conference on Neural Information Processing Systems (NeurIPS 2025) Datasets and Benchmarks Track},
+  month={December},
+  year={2025}
+}`}
+                    </pre>
+                    <button 
+                        onClick={copyCitation}
+                        className="absolute top-4 right-4 p-2 bg-slate-100 hover:bg-urb-blue hover:text-white rounded-md text-slate-500 transition-all duration-200 shadow-sm"
+                        title="Copy BibTeX"
+                    >
+                        {copied ? <Check size={16} /> : <Copy size={16} />}
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        {/* Supported By / Credits */}
+        <section className="py-12 bg-white border-t border-slate-200">
+            <div className="container mx-auto px-6">
+                <p className="text-center text-sm font-bold text-slate-400 uppercase tracking-widest mb-8">Supported By</p>
+                <div className="flex flex-wrap justify-center items-center gap-12 md:gap-16 grayscale hover:grayscale-0 transition-all duration-500">
+                    <a href="https://en.uj.edu.pl/en_GB/start" target="_blank" rel="noopener noreferrer" className="opacity-60 hover:opacity-100 transition-opacity">
+                        <img src="https://github.com/aonurakman/assets/blob/main/icons/uj.png?raw=true" alt="Jagiellonian University" className="h-16 w-auto object-contain" />
+                    </a>
+                    <a href="https://www.rafalkucharskilab.pl/COeXISTENCE/" target="_blank" rel="noopener noreferrer" className="opacity-60 hover:opacity-100 transition-opacity">
+                        <img src="https://github.com/aonurakman/assets/blob/main/icons/coexistence.png?raw=true" alt="COeXISTENCE" className="h-12 w-auto object-contain" />
+                    </a>
+                    <a href="https://www.gmum.net" target="_blank" rel="noopener noreferrer" className="opacity-60 hover:opacity-100 transition-opacity">
+                        <img src="https://github.com/aonurakman/assets/blob/main/icons/gmum.png?raw=true" alt="GMUM" className="h-10 w-auto object-contain" />
+                    </a>
+                    <a href="https://erc.europa.eu/homepage" target="_blank" rel="noopener noreferrer" className="opacity-60 hover:opacity-100 transition-opacity">
+                        <img src="https://github.com/aonurakman/assets/blob/main/icons/erc.png?raw=true" alt="ERC" className="h-16 w-auto object-contain" />
+                    </a>
+                </div>
+            </div>
+        </section>
 
       </main>
 
-      <footer className="bg-slate-900 text-slate-400 py-12">
+      <footer className="bg-slate-900 text-slate-400 py-12 border-t border-slate-800">
         <div className="container mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
-            <div className="text-center md:text-left">
-                <div className="text-white font-bold text-xl mb-1">URB</div>
-                <p className="text-xs text-slate-500">Urban Routing Benchmark for RL-equipped Connected Autonomous Vehicles</p>
+            <div className="text-center md:text-left max-w-lg">
+                <div className="text-white font-bold text-xl mb-2">URB</div>
+                <p className="text-xs text-slate-500 leading-relaxed mb-4">Urban Routing Benchmark for RL-equipped Connected Autonomous Vehicles</p>
+                <p className="text-[10px] text-slate-600 leading-relaxed">
+                    This work was financed by the European Union within the Horizon Europe Framework Programme (ERC Starting Grant COeXISTENCE no. 101075838).
+                </p>
             </div>
             <div className="text-xs text-slate-600">
                 © 2025 COeXISTENCE Project. MIT License.

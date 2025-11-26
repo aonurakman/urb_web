@@ -1,12 +1,38 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
 */
 
-import React, { useRef, useMemo, useEffect, Suspense } from 'react';
+import React, { useRef, useMemo, useEffect, Suspense, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Environment, PerspectiveCamera, OrbitControls, Instance, Instances, Text3D, Center } from '@react-three/drei';
 import * as THREE from 'three';
+
+// Add type declarations for R3F intrinsic elements
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      boxGeometry: any;
+      meshStandardMaterial: any;
+      instancedMesh: any;
+      lineSegments: any;
+      bufferGeometry: any;
+      bufferAttribute: any;
+      lineBasicMaterial: any;
+      group: any;
+      mesh: any;
+      sphereGeometry: any;
+      meshBasicMaterial: any;
+      cylinderGeometry: any;
+      fog: any;
+      ambientLight: any;
+      directionalLight: any;
+      planeGeometry: any;
+      pointLight: any;
+    }
+  }
+}
 
 // --- UTILS ---
 const randomRange = (min: number, max: number) => Math.random() * (max - min) + min;
@@ -128,6 +154,10 @@ const Traffic = ({ nodes, adjacency, brainRef }: { nodes: THREE.Vector3[], adjac
   const meshRef = useRef<THREE.InstancedMesh>(null);
   const dummy = useMemo(() => new THREE.Object3D(), []);
   
+  // Persistent state for active beams: Map<AgentIndex, ExpiryTime>
+  // Using a Ref for the map to avoid re-renders, as we modify it in useFrame
+  const activeBeamsRef = useRef(new Map<number, number>());
+  
   // Initialize particles
   const particles = useMemo(() => {
     if (nodes.length === 0) return [];
@@ -149,7 +179,7 @@ const Traffic = ({ nodes, adjacency, brainRef }: { nodes: THREE.Vector3[], adjac
 
   // Buffer Geometry for Beams
   const beamGeoRef = useRef<THREE.BufferGeometry>(null);
-  const maxBeams = 20;
+  const maxBeams = 20; // Max concurrent beams
 
   useEffect(() => {
     if (beamGeoRef.current) {
@@ -162,7 +192,7 @@ const Traffic = ({ nodes, adjacency, brainRef }: { nodes: THREE.Vector3[], adjac
     
     const time = state.clock.elapsedTime;
     
-    // Update Cars
+    // --- 1. UPDATE CARS ---
     particles.forEach((p, i) => {
         if (p.current === p.next) return; 
 
@@ -193,14 +223,12 @@ const Traffic = ({ nodes, adjacency, brainRef }: { nodes: THREE.Vector3[], adjac
         dummy.position.addScaledVector(side, p.offset);
         dummy.position.y = 0.15; // Slightly above road
 
-        // Orient car: Look at target
-        // Since geometry is scaled Z-long, looking at target aligns Z with direction
-        // We look at a point slightly ahead in the direction of movement to ensure stability
+        // Orient car
         const targetX = dummy.position.x + dir.x;
         const targetZ = dummy.position.z + dir.z;
         dummy.lookAt(targetX, 0.15, targetZ);
         
-        // Scale: width, height, length (Z is length)
+        // Scale
         dummy.scale.set(0.25, 0.2, 0.5); 
         dummy.updateMatrix();
 
@@ -213,35 +241,54 @@ const Traffic = ({ nodes, adjacency, brainRef }: { nodes: THREE.Vector3[], adjac
     meshRef.current.instanceMatrix.needsUpdate = true;
     if (meshRef.current.instanceColor) meshRef.current.instanceColor.needsUpdate = true;
 
-    // Update Control Beams (Brain -> CAVs)
+    // --- 2. UPDATE BEAMS (Brain -> CAVs) ---
     if (beamGeoRef.current && brainRef.current) {
         const brainPos = brainRef.current.position;
         const positions = new Float32Array(maxBeams * 2 * 3);
         let lineIndex = 0;
         
-        // Just random firing
-        const shouldFire = Math.sin(time * 5) > 0;
-        
-        // Iterate through particles to find connection targets
-        if (shouldFire) {
-             for(let k=0; k < particles.length && lineIndex < maxBeams; k+=9) {
-                 if (particles[k].isCAV) {
-                     const mat = new THREE.Matrix4();
-                     meshRef.current.getMatrixAt(k, mat);
-                     const carPos = new THREE.Vector3().setFromMatrixPosition(mat);
-                     
-                     // Start Point (Brain)
-                     positions[lineIndex * 6 + 0] = brainPos.x;
-                     positions[lineIndex * 6 + 1] = brainPos.y;
-                     positions[lineIndex * 6 + 2] = brainPos.z;
-                     // End Point (Car)
-                     positions[lineIndex * 6 + 3] = carPos.x;
-                     positions[lineIndex * 6 + 4] = carPos.y;
-                     positions[lineIndex * 6 + 5] = carPos.z;
-                     
-                     lineIndex++;
-                 }
-             }
+        // A. Cleanup expired beams
+        for (const [idx, expiry] of activeBeamsRef.current.entries()) {
+            if (time > expiry) {
+                activeBeamsRef.current.delete(idx);
+            }
+        }
+
+        // B. Spawn new beams if slots available
+        if (activeBeamsRef.current.size < maxBeams) {
+            // Try a few times to find a random CAV that isn't already connected
+            for (let tryCount = 0; tryCount < 5; tryCount++) {
+                const rndIdx = Math.floor(Math.random() * particles.length);
+                const p = particles[rndIdx];
+                
+                // Only target CAVs that don't have an active beam
+                if (p.isCAV && !activeBeamsRef.current.has(rndIdx)) {
+                    // Beam lasts between 0.2 and 1.0 seconds
+                    const duration = randomRange(0.2, 1.0);
+                    activeBeamsRef.current.set(rndIdx, time + duration);
+                    break; // Spawned one, break loop to spread out creation
+                }
+            }
+        }
+
+        // C. Draw active beams
+        for (const [idx, _] of activeBeamsRef.current.entries()) {
+             if (lineIndex >= maxBeams) break;
+
+             const mat = new THREE.Matrix4();
+             meshRef.current.getMatrixAt(idx, mat);
+             const carPos = new THREE.Vector3().setFromMatrixPosition(mat);
+             
+             // Start Point (Brain)
+             positions[lineIndex * 6 + 0] = brainPos.x;
+             positions[lineIndex * 6 + 1] = brainPos.y; // Origin from center/bottom of brain
+             positions[lineIndex * 6 + 2] = brainPos.z;
+             // End Point (Car)
+             positions[lineIndex * 6 + 3] = carPos.x;
+             positions[lineIndex * 6 + 4] = carPos.y;
+             positions[lineIndex * 6 + 5] = carPos.z;
+             
+             lineIndex++;
         }
         
         beamGeoRef.current.setAttribute('position', new THREE.BufferAttribute(positions, 3));
@@ -268,7 +315,8 @@ const Traffic = ({ nodes, adjacency, brainRef }: { nodes: THREE.Vector3[], adjac
                     itemSize={3}
                 />
             </bufferGeometry>
-            <lineBasicMaterial color="#60a5fa" opacity={0.3} transparent blending={THREE.AdditiveBlending} />
+            {/* Electric Cyan color, visible opacity */}
+            <lineBasicMaterial color="#22d3ee" opacity={0.6} transparent blending={THREE.AdditiveBlending} />
         </lineSegments>
     </group>
   );
