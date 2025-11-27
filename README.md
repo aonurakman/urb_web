@@ -6,7 +6,7 @@
 [URB repo 🔗](https://github.com/COeXISTENCE-PROJECT/URB)
 
 ```
-urbenhcmark.com
+urbenchmark.com
 ```
 ```
 aonurakman.github.io/urb_web/
